@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<!-- saved from url=(0057)file:///C:/Users/sooyeongshen/Downloads/solar_hunt_2.html -->
+<html lang="zh"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>找太阳能！Solar Energy Hunt</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&family=Baloo+2:wght@700;800&display=swap');
+
+  :root {
+    --sun: #FFB800;
+    --sun-deep: #FF8C00;
+    --sky: #4FC3F7;
+    --sky-deep: #0288D1;
+    --green: #66BB6A;
+    --green-deep: #388E3C;
+    --bg: #FFF8E7;
+    --card: #FFFDF5;
+    --text: #2C1A0E;
+    --shadow: rgba(44,26,14,0.15);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  header {
+    background: linear-gradient(135deg, var(--sun) 0%, var(--sun-deep) 100%);
+    padding: 16px 80px 12px 24px;
+    text-align: center;
+    position: relative;
+    box-shadow: 0 4px 16px rgba(255,140,0,0.35);
+  }
+  header h1 {
+    font-family: 'Baloo 2', cursive;
+    font-size: clamp(1.3rem, 4vw, 2rem);
+    color: #fff;
+    text-shadow: 2px 3px 0 rgba(0,0,0,0.18);
+  }
+  header p { color: rgba(255,255,255,0.92); font-size: 0.9rem; margin-top: 2px; }
+
+  .sun-spin {
+    position: absolute; top: 10px; right: 16px;
+    width: 54px; height: 54px;
+    animation: spin-slow 10s linear infinite;
+  }
+  @keyframes spin-slow { to { transform: rotate(360deg); } }
+
+  /* SCORE BAR */
+  .scorebar {
+    display: flex; align-items: center; justify-content: center; gap: 16px;
+    background: var(--green-deep); color: #fff;
+    padding: 7px 20px; font-weight: 700; font-size: 1rem; flex-wrap: wrap;
+  }
+  .scorebar span { background: rgba(255,255,255,0.18); border-radius: 20px; padding: 3px 14px; }
+  #score-num { font-size: 1.25rem; color: var(--sun); }
+
+  /* SCENE WRAPPER */
+  .scene-wrapper {
+    padding: 14px 12px 6px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  .scene-title {
+    font-family: 'Baloo 2', cursive;
+    font-size: 1.25rem; color: var(--sun-deep);
+    margin-bottom: 6px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .instruction {
+    background: #E3F2FD; border-left: 4px solid var(--sky-deep);
+    border-radius: 8px; padding: 7px 14px;
+    font-size: 0.9rem; margin-bottom: 12px; color: #01579B;
+  }
+
+  /* SCENE CONTAINER */
+  .scene-container {
+    position: relative;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px var(--shadow);
+    cursor: crosshair;
+    border: 3px solid var(--sun);
+    user-select: none;
+    background: #87CEEB;
+  }
+  .scene-container svg { display: block; width: 100%; height: auto; }
+
+  /* HOTSPOTS */
+  .hotspot {
+    position: absolute; border-radius: 50%;
+    border: 3px dashed rgba(255,184,0,0.8);
+    background: rgba(255,184,0,0.1);
+    cursor: pointer; transition: all .25s;
+    animation: pulse-ring 2s ease-in-out infinite;
+  }
+  .hotspot:hover {
+    background: rgba(255,184,0,0.28);
+    border-color: var(--sun-deep);
+    transform: scale(1.12);
+  }
+  .hotspot.found {
+    border: 3px solid var(--green);
+    background: rgba(102,187,106,0.28);
+    animation: pop-found .4s ease forwards;
+    pointer-events: none;
+  }
+  .hotspot.found::after {
+    content: '✓';
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    font-size: 1.5rem; color: var(--green-deep); font-weight: 900;
+  }
+  @keyframes pulse-ring {
+    0%,100% { box-shadow: 0 0 0 0 rgba(255,184,0,0.45); }
+    50%      { box-shadow: 0 0 0 12px rgba(255,184,0,0); }
+  }
+  @keyframes pop-found {
+    0%   { transform: scale(1); }
+    50%  { transform: scale(1.35); }
+    100% { transform: scale(1); }
+  }
+
+  /* POPUP */
+  #popup-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.48); z-index: 100;
+    align-items: center; justify-content: center;
+  }
+  #popup-overlay.show { display: flex; }
+  .popup-card {
+    background: var(--card); border-radius: 22px;
+    padding: 28px 30px 22px; max-width: 400px; width: 93%;
+    box-shadow: 0 12px 48px rgba(0,0,0,0.28);
+    text-align: center;
+    animation: card-in .32s cubic-bezier(.34,1.56,.64,1);
+    border-top: 6px solid var(--sun);
+  }
+  @keyframes card-in {
+    from { transform: scale(0.7) translateY(30px); opacity: 0; }
+    to   { transform: scale(1) translateY(0); opacity: 1; }
+  }
+  .popup-emoji { font-size: 3.4rem; margin-bottom: 4px; display: block; }
+  .popup-card .popup-label { font-size: 0.75rem; color: #aaa; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+  .popup-card h2 { font-family: 'Baloo 2', cursive; font-size: 1.45rem; color: var(--sun-deep); margin-top: 2px; }
+  .popup-card p { font-size: 0.96rem; color: #555; margin-top: 10px; line-height: 1.6; }
+  .popup-fact {
+    margin-top: 14px; padding: 10px 14px;
+    background: #FFF8E1; border-radius: 10px;
+    font-size: 0.87rem; color: #7B5E00;
+    border-left: 4px solid var(--sun); text-align: left;
+  }
+  .popup-fact strong { color: var(--sun-deep); }
+  .popup-close {
+    margin-top: 18px;
+    background: var(--sun); color: #fff; border: none;
+    border-radius: 30px; padding: 10px 36px;
+    font-family: 'Baloo 2', cursive; font-size: 1.05rem;
+    cursor: pointer; box-shadow: 0 4px 12px rgba(255,140,0,0.3);
+    transition: transform .15s;
+  }
+  .popup-close:hover { transform: scale(1.06); }
+
+  /* FOUND PANEL */
+  .found-panel { max-width: 1100px; margin: 12px auto 80px; padding: 0 12px; }
+  .found-panel h3 { font-family: 'Baloo 2', cursive; font-size: 1.05rem; color: var(--green-deep); margin-bottom: 8px; }
+  .found-list { display: flex; flex-wrap: wrap; gap: 8px; }
+  .found-chip {
+    background: #E8F5E9; border: 2px solid var(--green);
+    border-radius: 20px; padding: 5px 14px;
+    font-size: 0.85rem; font-weight: 700; color: var(--green-deep);
+    opacity: 0.32; transition: opacity .35s;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .found-chip.active { opacity: 1; }
+
+  /* WIN */
+  #win-screen {
+    display: none; position: fixed; inset: 0;
+    background: linear-gradient(135deg,#FFF8E7,#FFF3CD);
+    z-index: 200; align-items: center; justify-content: center;
+    flex-direction: column; text-align: center; padding: 30px;
+  }
+  #win-screen.show { display: flex; }
+  .win-emoji { font-size: 5rem; animation: bounce 1s ease infinite; }
+  @keyframes bounce { 0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)} }
+  #win-screen h2 { font-family:'Baloo 2',cursive; font-size:2rem; color:var(--sun-deep); margin:12px 0 6px; }
+  #win-screen p { font-size:1rem; color:#666; max-width:340px; line-height:1.6; }
+  .replay-btn {
+    margin-top: 22px;
+    background: var(--sun-deep); color: #fff; border: none;
+    border-radius: 30px; padding: 13px 44px;
+    font-family: 'Baloo 2', cursive; font-size: 1.1rem;
+    cursor: pointer; box-shadow: 0 6px 18px rgba(255,140,0,.3);
+    transition: transform .15s;
+  }
+  .replay-btn:hover { transform: scale(1.06); }
+
+  /* CREDIT */
+  .credit-badge {
+    position: fixed; bottom: 14px; right: 16px;
+    background: rgba(255,184,0,0.93);
+    color: #7B4500; font-family: 'Baloo 2', cursive;
+    font-size: 0.78rem; font-weight: 700;
+    padding: 5px 13px 5px 10px; border-radius: 20px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.18);
+    display: flex; align-items: center; gap: 5px;
+    z-index: 9999; border: 1.5px solid rgba(255,255,255,0.6);
+    user-select: none;
+  }
+  .credit-badge .dot { width:7px;height:7px;background:#FF6F00;border-radius:50%; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🌞 找一找！太阳能藏在哪里？</h1>
+  <p>Solar Energy Hunt · 点击图中你发现的太阳能装置！</p>
+  <svg class="sun-spin" viewBox="0 0 60 60" fill="none">
+    <circle cx="30" cy="30" r="13" fill="#fff" opacity=".9"></circle>
+    <circle cx="30" cy="30" r="9" fill="#FFB800"></circle>
+    <line x1="30" y1="2" x2="30" y2="12" stroke="#fff" stroke-width="3" stroke-linecap="round"></line>
+    <line x1="30" y1="48" x2="30" y2="58" stroke="#fff" stroke-width="3" stroke-linecap="round"></line>
+    <line x1="2" y1="30" x2="12" y2="30" stroke="#fff" stroke-width="3" stroke-linecap="round"></line>
+    <line x1="48" y1="30" x2="58" y2="30" stroke="#fff" stroke-width="3" stroke-linecap="round"></line>
+    <line x1="8.7" y1="8.7" x2="15.8" y2="15.8" stroke="#fff" stroke-width="3" stroke-linecap="round"></line>
+    <line x1="44.2" y1="44.2" x2="51.3" y2="51.3" stroke="#fff" stroke-width="3" stroke-linecap="round"></line>
+    <line x1="51.3" y1="8.7" x2="44.2" y2="15.8" stroke="#fff" stroke-width="3" stroke-linecap="round"></line>
+    <line x1="15.8" y1="44.2" x2="8.7" y2="51.3" stroke="#fff" stroke-width="3" stroke-linecap="round"></line>
+  </svg>
+</header>
+
+<div class="scorebar">
+  <span>⭐ 得分 <span id="score-num">0</span></span>
+  <span id="progress-text">已找到 0 / 5</span>
+  <span>🏙️ 城市场景</span>
+</div>
+
+<div class="scene-wrapper">
+  <div class="scene-title">🏙️ 城市里的太阳能 &nbsp;<span style="background:var(--green);color:#fff;border-radius:20px;padding:2px 12px;font-size:0.82rem;">找出全部 5 个！</span></div>
+  <div class="instruction">👆 仔细看图，点击你认为有太阳能装置的地方！找到全部 5 个就赢了！</div>
+  <div class="scene-container" id="scene-container">
+
+<svg viewBox="0 0 1100 600" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif">
+<defs>
+  <lineargradient id="skyG" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#5BB8F5"></stop>
+    <stop offset="60%" stop-color="#A8D8EA"></stop>
+    <stop offset="100%" stop-color="#D6EAF8"></stop>
+  </lineargradient>
+  <lineargradient id="roadG" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#6D7E8A"></stop>
+    <stop offset="100%" stop-color="#4A5D6B"></stop>
+  </lineargradient>
+  <lineargradient id="grassG" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#7DC95E"></stop>
+    <stop offset="100%" stop-color="#5AA63C"></stop>
+  </lineargradient>
+  <lineargradient id="bldg1G" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#B0BEC5"></stop>
+    <stop offset="100%" stop-color="#78909C"></stop>
+  </lineargradient>
+  <lineargradient id="bldg2G" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#CFD8DC"></stop>
+    <stop offset="100%" stop-color="#90A4AE"></stop>
+  </lineargradient>
+  <lineargradient id="bldg3G" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#C5CAE9"></stop>
+    <stop offset="100%" stop-color="#7986CB"></stop>
+  </lineargradient>
+  <lineargradient id="panelG" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#1E3A8A"></stop>
+    <stop offset="100%" stop-color="#1565C0"></stop>
+  </lineargradient>
+  <filter id="softShadow" x="-10%" y="-10%" width="120%" height="130%">
+    <fedropshadow dx="2" dy="4" stdDeviation="4" flood-opacity="0.18"></fedropshadow>
+  </filter>
+  <filter id="glow">
+    <fegaussianblur stdDeviation="3" result="blur"></fegaussianblur>
+    <femerge><femergenode in="blur"></femergenode><femergenode in="SourceGraphic"></femergenode></femerge>
+  </filter>
+</defs>
+
+<!-- ═══════════════ SKY & ATMOSPHERE ═══════════════ -->
+<rect width="1100" height="600" fill="url(#skyG)"></rect>
+
+<!-- SUN with rays -->
+<circle cx="980" cy="72" r="52" fill="#FFD54F" opacity=".2"></circle>
+<circle cx="980" cy="72" r="40" fill="#FFD54F" opacity=".6"></circle>
+<circle cx="980" cy="72" r="30" fill="#FFB300"></circle>
+<circle cx="980" cy="72" r="22" fill="#FF8F00"></circle>
+<!-- rays -->
+<g stroke="#FFD54F" stroke-width="3" stroke-linecap="round" opacity=".75">
+  <line x1="980" y1="22" x2="980" y2="8"></line>
+  <line x1="980" y1="122" x2="980" y2="136"></line>
+  <line x1="930" y1="72" x2="916" y2="72"></line>
+  <line x1="1030" y1="72" x2="1044" y2="72"></line>
+  <line x1="945" y1="37" x2="935" y2="27"></line>
+  <line x1="1015" y1="107" x2="1025" y2="117"></line>
+  <line x1="1015" y1="37" x2="1025" y2="27"></line>
+  <line x1="945" y1="107" x2="935" y2="117"></line>
+</g>
+
+<!-- Clouds -->
+<g opacity=".88">
+  <ellipse cx="120" cy="90" rx="75" ry="32" fill="white"></ellipse>
+  <ellipse cx="80" cy="98" rx="52" ry="28" fill="white"></ellipse>
+  <ellipse cx="160" cy="96" rx="58" ry="26" fill="white"></ellipse>
+</g>
+<g opacity=".78">
+  <ellipse cx="380" cy="65" rx="65" ry="26" fill="white"></ellipse>
+  <ellipse cx="345" cy="73" rx="45" ry="22" fill="white"></ellipse>
+  <ellipse cx="415" cy="71" rx="50" ry="22" fill="white"></ellipse>
+</g>
+<g opacity=".72">
+  <ellipse cx="640" cy="55" rx="58" ry="22" fill="white"></ellipse>
+  <ellipse cx="608" cy="62" rx="40" ry="20" fill="white"></ellipse>
+</g>
+
+<!-- ═══════════════ GROUND, ROAD, PAVEMENT ═══════════════ -->
+<!-- grass strip far -->
+<rect x="0" y="450" width="1100" height="150" fill="url(#grassG)"></rect>
+<!-- sidewalk near buildings -->
+<rect x="0" y="448" width="1100" height="18" fill="#C8D6E0"></rect>
+<!-- ROAD -->
+<rect x="0" y="466" width="1100" height="88" fill="url(#roadG)"></rect>
+<!-- road markings -->
+<rect x="0" y="506" width="1100" height="6" fill="#FDD835" opacity=".65"></rect>
+<!-- dashed centre line -->
+<g fill="#FDD835" opacity=".55">
+  <rect x="20" y="507" width="80" height="4" rx="2"></rect>
+  <rect x="140" y="507" width="80" height="4" rx="2"></rect>
+  <rect x="260" y="507" width="80" height="4" rx="2"></rect>
+  <rect x="380" y="507" width="80" height="4" rx="2"></rect>
+  <rect x="500" y="507" width="80" height="4" rx="2"></rect>
+  <rect x="620" y="507" width="80" height="4" rx="2"></rect>
+  <rect x="740" y="507" width="80" height="4" rx="2"></rect>
+  <rect x="860" y="507" width="80" height="4" rx="2"></rect>
+  <rect x="980" y="507" width="80" height="4" rx="2"></rect>
+</g>
+<!-- zebra crossing -->
+<g fill="white" opacity=".75">
+  <rect x="470" y="466" width="22" height="88" rx="2"></rect>
+  <rect x="500" y="466" width="22" height="88" rx="2"></rect>
+  <rect x="530" y="466" width="22" height="88" rx="2"></rect>
+  <rect x="560" y="466" width="22" height="88" rx="2"></rect>
+</g>
+<!-- pavement tiles -->
+<g fill="none" stroke="#BCC8D0" stroke-width="0.8" opacity=".6">
+  <line x1="0" y1="454" x2="1100" y2="454"></line>
+  <line x1="0" y1="460" x2="1100" y2="460"></line>
+  <!-- vertical tile lines -->
+  <line x1="100" y1="448" x2="100" y2="466"></line>
+  <line x1="200" y1="448" x2="200" y2="466"></line>
+  <line x1="300" y1="448" x2="300" y2="466"></line>
+  <line x1="400" y1="448" x2="400" y2="466"></line>
+  <line x1="600" y1="448" x2="600" y2="466"></line>
+  <line x1="700" y1="448" x2="700" y2="466"></line>
+  <line x1="800" y1="448" x2="800" y2="466"></line>
+  <line x1="900" y1="448" x2="900" y2="466"></line>
+  <line x1="1000" y1="448" x2="1000" y2="466"></line>
+</g>
+
+<!-- ═══════════════ BUILDING 1 – Large Office Tower (right) ═══════════════ -->
+<!-- shadow -->
+<rect x="712" y="95" width="255" height="360" fill="#000" opacity=".06" rx="4"></rect>
+<!-- body -->
+<rect x="705" y="90" width="255" height="360" fill="url(#bldg1G)" rx="4" filter="url(#softShadow)"></rect>
+<!-- facade vertical lines -->
+<g stroke="#90A4AE" stroke-width="1" opacity=".4">
+  <line x1="760" y1="90" x2="760" y2="450"></line>
+  <line x1="815" y1="90" x2="815" y2="450"></line>
+  <line x1="870" y1="90" x2="870" y2="450"></line>
+  <line x1="925" y1="90" x2="925" y2="450"></line>
+</g>
+<!-- windows – columns × rows -->
+<!-- col spacing 55, start x=718, col0–3. row spacing 36, start y=105, 9 rows -->
+<g fill="#B3E5FC" rx="3" opacity=".85">
+  <!-- row 0 -->
+  <rect x="718" y="105" width="34" height="25" rx="2"></rect><rect x="773" y="105" width="34" height="25" rx="2"></rect>
+  <rect x="828" y="105" width="34" height="25" rx="2"></rect><rect x="883" y="105" width="34" height="25" rx="2"></rect>
+  <rect x="938" y="105" width="34" height="25" rx="2"></rect>
+  <!-- row 1 -->
+  <rect x="718" y="141" width="34" height="25" rx="2"></rect><rect x="773" y="141" width="34" height="25" rx="2"></rect>
+  <rect x="828" y="141" width="34" height="25" rx="2"></rect><rect x="883" y="141" width="34" height="25" rx="2"></rect>
+  <rect x="938" y="141" width="34" height="25" rx="2"></rect>
+  <!-- row 2 -->
+  <rect x="718" y="177" width="34" height="25" rx="2"></rect><rect x="773" y="177" width="34" height="25" rx="2"></rect>
+  <rect x="828" y="177" width="34" height="25" rx="2"></rect><rect x="883" y="177" width="34" height="25" rx="2"></rect>
+  <rect x="938" y="177" width="34" height="25" rx="2"></rect>
+  <!-- row 3 -->
+  <rect x="718" y="213" width="34" height="25" rx="2"></rect><rect x="773" y="213" width="34" height="25" rx="2"></rect>
+  <rect x="828" y="213" width="34" height="25" rx="2"></rect><rect x="883" y="213" width="34" height="25" rx="2"></rect>
+  <rect x="938" y="213" width="34" height="25" rx="2"></rect>
+  <!-- row 4 -->
+  <rect x="718" y="249" width="34" height="25" rx="2"></rect><rect x="773" y="249" width="34" height="25" rx="2"></rect>
+  <rect x="828" y="249" width="34" height="25" rx="2"></rect><rect x="883" y="249" width="34" height="25" rx="2"></rect>
+  <rect x="938" y="249" width="34" height="25" rx="2"></rect>
+  <!-- row 5 -->
+  <rect x="718" y="285" width="34" height="25" rx="2"></rect><rect x="773" y="285" width="34" height="25" rx="2"></rect>
+  <rect x="828" y="285" width="34" height="25" rx="2"></rect><rect x="883" y="285" width="34" height="25" rx="2"></rect>
+  <rect x="938" y="285" width="34" height="25" rx="2"></rect>
+  <!-- row 6 -->
+  <rect x="718" y="321" width="34" height="25" rx="2"></rect><rect x="773" y="321" width="34" height="25" rx="2"></rect>
+  <rect x="828" y="321" width="34" height="25" rx="2"></rect><rect x="883" y="321" width="34" height="25" rx="2"></rect>
+  <rect x="938" y="321" width="34" height="25" rx="2"></rect>
+  <!-- row 7 -->
+  <rect x="718" y="357" width="34" height="25" rx="2"></rect><rect x="773" y="357" width="34" height="25" rx="2"></rect>
+  <rect x="828" y="357" width="34" height="25" rx="2"></rect><rect x="883" y="357" width="34" height="25" rx="2"></rect>
+  <rect x="938" y="357" width="34" height="25" rx="2"></rect>
+  <!-- row 8 -->
+  <rect x="718" y="393" width="34" height="25" rx="2"></rect><rect x="773" y="393" width="34" height="25" rx="2"></rect>
+  <rect x="828" y="393" width="34" height="25" rx="2"></rect><rect x="883" y="393" width="34" height="25" rx="2"></rect>
+  <rect x="938" y="393" width="34" height="25" rx="2"></rect>
+</g>
+<!-- window glints -->
+<g fill="white" opacity=".35">
+  <rect x="718" y="105" width="8" height="6" rx="1"></rect>
+  <rect x="773" y="141" width="8" height="6" rx="1"></rect>
+  <rect x="828" y="105" width="8" height="6" rx="1"></rect>
+</g>
+<!-- ROOFTOP SOLAR PANELS – HOTSPOT: panel -->
+<rect x="706" y="70" width="253" height="24" fill="url(#panelG)" rx="3"></rect>
+<!-- panel grid lines -->
+<g stroke="#42A5F5" stroke-width="0.9" opacity=".8">
+  <line x1="745" y1="70" x2="745" y2="94"></line>
+  <line x1="784" y1="70" x2="784" y2="94"></line>
+  <line x1="823" y1="70" x2="823" y2="94"></line>
+  <line x1="862" y1="70" x2="862" y2="94"></line>
+  <line x1="901" y1="70" x2="901" y2="94"></line>
+  <line x1="940" y1="70" x2="940" y2="94"></line>
+  <line x1="706" y1="82" x2="959" y2="82"></line>
+</g>
+<!-- cell sheen -->
+<g fill="#42A5F5" opacity=".12">
+  <rect x="708" y="72" width="35" height="10" rx="1"></rect>
+  <rect x="786" y="72" width="35" height="10" rx="1"></rect>
+  <rect x="864" y="72" width="35" height="10" rx="1"></rect>
+</g>
+<!-- label arrow -->
+<path d="M832,60 L832,68" stroke="#1565C0" stroke-width="2" marker-end="url(#arr)"></path>
+<text x="832" y="55" text-anchor="middle" fill="#1565C0" font-size="11" font-weight="bold">☀️ 太阳能电池板</text>
+
+<!-- ═══════════════ BUILDING 2 – Mid-height (centre) ═══════════════ -->
+<rect x="410" y="150" width="180" height="300" fill="url(#bldg3G)" rx="4" filter="url(#softShadow)"></rect>
+<g stroke="#7986CB" stroke-width="1" opacity=".35">
+  <line x1="460" y1="150" x2="460" y2="450"></line>
+  <line x1="510" y1="150" x2="510" y2="450"></line>
+  <line x1="560" y1="150" x2="560" y2="450"></line>
+</g>
+<g fill="#E8EAF6" opacity=".8">
+  <rect x="420" y="165" width="32" height="22" rx="2"></rect><rect x="462" y="165" width="32" height="22" rx="2"></rect>
+  <rect x="504" y="165" width="32" height="22" rx="2"></rect><rect x="546" y="165" width="32" height="22" rx="2"></rect>
+  <rect x="420" y="198" width="32" height="22" rx="2"></rect><rect x="462" y="198" width="32" height="22" rx="2"></rect>
+  <rect x="504" y="198" width="32" height="22" rx="2"></rect><rect x="546" y="198" width="32" height="22" rx="2"></rect>
+  <rect x="420" y="231" width="32" height="22" rx="2"></rect><rect x="462" y="231" width="32" height="22" rx="2"></rect>
+  <rect x="504" y="231" width="32" height="22" rx="2"></rect><rect x="546" y="231" width="32" height="22" rx="2"></rect>
+  <rect x="420" y="264" width="32" height="22" rx="2"></rect><rect x="462" y="264" width="32" height="22" rx="2"></rect>
+  <rect x="504" y="264" width="32" height="22" rx="2"></rect><rect x="546" y="264" width="32" height="22" rx="2"></rect>
+  <rect x="420" y="297" width="32" height="22" rx="2"></rect><rect x="462" y="297" width="32" height="22" rx="2"></rect>
+  <rect x="504" y="297" width="32" height="22" rx="2"></rect><rect x="546" y="297" width="32" height="22" rx="2"></rect>
+  <rect x="420" y="330" width="32" height="22" rx="2"></rect><rect x="462" y="330" width="32" height="22" rx="2"></rect>
+  <rect x="504" y="330" width="32" height="22" rx="2"></rect><rect x="546" y="330" width="32" height="22" rx="2"></rect>
+  <rect x="420" y="363" width="32" height="22" rx="2"></rect><rect x="462" y="363" width="32" height="22" rx="2"></rect>
+  <rect x="504" y="363" width="32" height="22" rx="2"></rect><rect x="546" y="363" width="32" height="22" rx="2"></rect>
+  <rect x="420" y="396" width="32" height="22" rx="2"></rect><rect x="462" y="396" width="32" height="22" rx="2"></rect>
+  <rect x="504" y="396" width="32" height="22" rx="2"></rect><rect x="546" y="396" width="32" height="22" rx="2"></rect>
+</g>
+<!-- entrance -->
+<rect x="471" y="400" width="48" height="50" fill="#B39DDB" rx="3"></rect>
+<circle cx="492" cy="426" r="4" fill="#EDE7F6"></circle>
+
+<!-- ═══════════════ BUILDING 3 – Low shop (left) ═══════════════ -->
+<rect x="60" y="260" width="200" height="190" fill="#FFECB3" rx="4" filter="url(#softShadow)"></rect>
+<rect x="60" y="260" width="200" height="6" fill="#FFC107" rx="2"></rect>
+<g fill="#B3E5FC" opacity=".85">
+  <rect x="72" y="280" width="42" height="35" rx="2"></rect><rect x="124" y="280" width="42" height="35" rx="2"></rect>
+  <rect x="176" y="280" width="42" height="35" rx="2"></rect>
+  <rect x="72" y="328" width="42" height="35" rx="2"></rect><rect x="124" y="328" width="42" height="35" rx="2"></rect>
+  <rect x="176" y="328" width="42" height="35" rx="2"></rect>
+</g>
+<!-- shop sign -->
+<rect x="72" y="375" width="176" height="30" fill="#FF8F00" rx="4"></rect>
+<text x="160" y="395" text-anchor="middle" fill="white" font-size="13" font-weight="bold">GREEN STORE</text>
+<!-- shop door -->
+<rect x="130" y="405" width="60" height="45" fill="#4DB6AC" rx="3"></rect>
+<rect x="152" y="405" width="2" height="45" fill="#26A69A"></rect>
+<circle cx="145" cy="428" r="3" fill="#E0F7FA"></circle>
+
+<!-- ═══════════════ BUILDING 4 – Short block (far left) ═══════════════ -->
+<rect x="0" y="310" width="55" height="140" fill="url(#bldg2G)" rx="3"></rect>
+<g fill="#B3E5FC" opacity=".75">
+  <rect x="6" y="318" width="18" height="14" rx="1"></rect><rect x="30" y="318" width="18" height="14" rx="1"></rect>
+  <rect x="6" y="342" width="18" height="14" rx="1"></rect><rect x="30" y="342" width="18" height="14" rx="1"></rect>
+  <rect x="6" y="366" width="18" height="14" rx="1"></rect><rect x="30" y="366" width="18" height="14" rx="1"></rect>
+  <rect x="6" y="390" width="18" height="14" rx="1"></rect><rect x="30" y="390" width="18" height="14" rx="1"></rect>
+</g>
+
+<!-- ═══════════════ SOLAR STREET LAMP – HOTSPOT: street ═══════════════ -->
+<!-- pole -->
+<rect x="295" y="310" width="10" height="142" fill="#546E7A" rx="4"></rect>
+<!-- curved arm -->
+<path d="M300,315 Q330,285 355,292" fill="none" stroke="#546E7A" stroke-width="8" stroke-linecap="round"></path>
+<!-- lamp head -->
+<rect x="342" y="285" width="40" height="16" fill="#37474F" rx="6"></rect>
+<!-- lamp glass + glow -->
+<ellipse cx="362" cy="293" rx="16" ry="7" fill="#FFF176" opacity=".9" filter="url(#glow)"></ellipse>
+<ellipse cx="362" cy="293" rx="10" ry="4" fill="#FDD835"></ellipse>
+<!-- SOLAR PANEL on lamp -->
+<rect x="278" y="298" width="44" height="18" fill="url(#panelG)" rx="3" transform="rotate(-12,300,307)"></rect>
+<g stroke="#42A5F5" stroke-width="0.8" opacity=".8" transform="rotate(-12,300,307)">
+  <line x1="293" y1="298" x2="293" y2="316"></line>
+  <line x1="307" y1="298" x2="307" y2="316"></line>
+  <line x1="321" y1="298" x2="321" y2="316"></line>
+  <line x1="278" y1="307" x2="322" y2="307"></line>
+</g>
+<!-- cable from panel to pole -->
+<path d="M300,305 Q298,310 299,314" fill="none" stroke="#37474F" stroke-width="1.5"></path>
+<!-- label -->
+<text x="220" y="286" fill="#1565C0" font-size="11" font-weight="bold">💡 太阳能路灯</text>
+<path d="M282,290 L295,300" stroke="#1565C0" stroke-width="1.5" stroke-dasharray="3,2"></path>
+<!-- ground bolt -->
+<rect x="292" y="450" width="14" height="5" fill="#455A64" rx="2"></rect>
+
+<!-- ═══════════════ SOLAR BUS STOP – HOTSPOT: bus ═══════════════ -->
+<!-- back wall -->
+<rect x="334" y="370" width="58" height="70" fill="#E3F2FD" rx="5" stroke="#90CAF9" stroke-width="2"></rect>
+<!-- SOLAR PANEL ROOF -->
+<rect x="330" y="355" width="68" height="18" fill="url(#panelG)" rx="3"></rect>
+<g stroke="#42A5F5" stroke-width="0.9" opacity=".8">
+  <line x1="352" y1="355" x2="352" y2="373"></line>
+  <line x1="374" y1="355" x2="374" y2="373"></line>
+  <line x1="396" y1="355" x2="396" y2="373"></line>
+  <line x1="330" y1="364" x2="398" y2="364"></line>
+</g>
+<!-- roof edge gutter -->
+<rect x="329" y="372" width="70" height="4" fill="#1565C0" rx="1"></rect>
+<!-- LED display inside -->
+<rect x="338" y="378" width="50" height="20" fill="#1A237E" rx="3"></rect>
+<text x="363" y="393" text-anchor="middle" fill="#00E5FF" font-size="8" font-weight="bold">巴士 7 分钟</text>
+<!-- info poster -->
+<rect x="338" y="401" width="50" height="30" fill="#FFF9C4" rx="2"></rect>
+<line x1="338" y1="408" x2="388" y2="408" stroke="#FDD835" stroke-width="1"></line>
+<line x1="338" y1="414" x2="388" y2="414" stroke="#FDD835" stroke-width="1"></line>
+<!-- bench -->
+<rect x="336" y="429" width="54" height="7" fill="#BCAAA4" rx="2"></rect>
+<rect x="340" y="436" width="6" height="12" fill="#A1887F" rx="1"></rect>
+<rect x="380" y="436" width="6" height="12" fill="#A1887F" rx="1"></rect>
+<!-- USB charge port -->
+<rect x="381" y="381" width="6" height="10" fill="#37474F" rx="1"></rect>
+<!-- label -->
+<text x="410" y="352" fill="#1565C0" font-size="11" font-weight="bold">🚌 太阳能公交站</text>
+<path d="M408,356 L393,360" stroke="#1565C0" stroke-width="1.5" stroke-dasharray="3,2"></path>
+
+<!-- person at bus stop -->
+<circle cx="312" cy="432" r="10" fill="#FFCC80"></circle>
+<rect x="306" y="442" width="12" height="18" fill="#5C6BC0" rx="2"></rect>
+<rect x="299" y="444" width="8" height="12" fill="#7986CB" rx="2"></rect>
+<rect x="318" y="444" width="8" height="12" fill="#7986CB" rx="2"></rect>
+<rect x="306" y="460" width="5" height="10" fill="#3F51B5" rx="1"></rect>
+<rect x="313" y="460" width="5" height="10" fill="#3F51B5" rx="1"></rect>
+
+<!-- ═══════════════ SOLAR CAR PARK CANOPY – HOTSPOT: car ═══════════════ -->
+<!-- support beams -->
+<rect x="630" y="415" width="10" height="38" fill="#455A64" rx="3"></rect>
+<rect x="760" y="415" width="10" height="38" fill="#455A64" rx="3"></rect>
+<rect x="890" y="415" width="10" height="38" fill="#455A64" rx="3"></rect>
+<!-- beam cross pieces -->
+<rect x="630" y="410" width="10" height="8" fill="#37474F" rx="2"></rect>
+<rect x="760" y="410" width="10" height="8" fill="#37474F" rx="2"></rect>
+<rect x="890" y="410" width="10" height="8" fill="#37474F" rx="2"></rect>
+<!-- canopy frame -->
+<rect x="622" y="390" width="285" height="22" fill="#37474F" rx="4"></rect>
+<!-- SOLAR PANELS on canopy, two rows -->
+<rect x="626" y="392" width="277" height="10" fill="url(#panelG)" rx="2"></rect>
+<g stroke="#42A5F5" stroke-width="0.8" opacity=".75">
+  <line x1="660" y1="392" x2="660" y2="402"></line>
+  <line x1="694" y1="392" x2="694" y2="402"></line>
+  <line x1="728" y1="392" x2="728" y2="402"></line>
+  <line x1="762" y1="392" x2="762" y2="402"></line>
+  <line x1="796" y1="392" x2="796" y2="402"></line>
+  <line x1="830" y1="392" x2="830" y2="402"></line>
+  <line x1="864" y1="392" x2="864" y2="402"></line>
+  <line x1="626" y1="397" x2="903" y2="397"></line>
+</g>
+<rect x="626" y="403" width="277" height="8" fill="url(#panelG)" rx="2"></rect>
+<g stroke="#42A5F5" stroke-width="0.8" opacity=".65">
+  <line x1="660" y1="403" x2="660" y2="411"></line>
+  <line x1="694" y1="403" x2="694" y2="411"></line>
+  <line x1="728" y1="403" x2="728" y2="411"></line>
+  <line x1="762" y1="403" x2="762" y2="411"></line>
+  <line x1="796" y1="403" x2="796" y2="411"></line>
+  <line x1="830" y1="403" x2="830" y2="411"></line>
+  <line x1="864" y1="403" x2="864" y2="411"></line>
+  <line x1="626" y1="407" x2="903" y2="407"></line>
+</g>
+<!-- EV CHARGE port under canopy -->
+<rect x="638" y="432" width="14" height="18" fill="#00BCD4" rx="3"></rect>
+<text x="645" y="443" text-anchor="middle" fill="white" font-size="7" font-weight="bold">EV</text>
+<!-- cable -->
+<path d="M645,450 Q645,455 640,460" fill="none" stroke="#00838F" stroke-width="2"></path>
+<!-- CAR 1 – Electric -->
+<rect x="650" y="440" width="95" height="26" fill="#EF9A9A" rx="7"></rect>
+<rect x="660" y="429" width="74" height="14" fill="#EF5350" rx="5"></rect>
+<ellipse cx="680" cy="438" rx="22" ry="8" fill="#B3E5FC" opacity=".8"></ellipse>
+<!-- wheels -->
+<circle cx="673" cy="466" r="9" fill="#37474F"></circle><circle cx="673" cy="466" r="5" fill="#78909C"></circle>
+<circle cx="730" cy="466" r="9" fill="#37474F"></circle><circle cx="730" cy="466" r="5" fill="#78909C"></circle>
+<!-- hub -->
+<circle cx="673" cy="466" r="2" fill="#B0BEC5"></circle><circle cx="730" cy="466" r="2" fill="#B0BEC5"></circle>
+<!-- CAR 2 -->
+<rect x="775" y="440" width="95" height="26" fill="#A5D6A7" rx="7"></rect>
+<rect x="785" y="429" width="74" height="14" fill="#66BB6A" rx="5"></rect>
+<ellipse cx="805" cy="438" rx="22" ry="8" fill="#B3E5FC" opacity=".8"></ellipse>
+<circle cx="798" cy="466" r="9" fill="#37474F"></circle><circle cx="798" cy="466" r="5" fill="#78909C"></circle>
+<circle cx="855" cy="466" r="9" fill="#37474F"></circle><circle cx="855" cy="466" r="5" fill="#78909C"></circle>
+<circle cx="798" cy="466" r="2" fill="#B0BEC5"></circle><circle cx="855" cy="466" r="2" fill="#B0BEC5"></circle>
+<!-- label -->
+<text x="762" y="382" text-anchor="middle" fill="#1565C0" font-size="11" font-weight="bold">🚗 太阳能停车棚（含EV充电）</text>
+
+<!-- ═══════════════ SOLAR BILLBOARD – HOTSPOT: sign ═══════════════ -->
+<!-- pole -->
+<rect x="101" y="195" width="12" height="70" fill="#546E7A" rx="4"></rect>
+<rect x="95" y="261" width="24" height="8" fill="#455A64" rx="3"></rect>
+<!-- billboard back -->
+<rect x="50" y="95" width="160" height="100" fill="#1A1A2E" rx="6" filter="url(#softShadow)"></rect>
+<!-- LED screen area -->
+<rect x="54" y="99" width="152" height="92" fill="#0D1B4B" rx="4"></rect>
+<!-- screen content -->
+<circle cx="90" cy="140" r="22" fill="#FFD54F" opacity=".9"></circle>
+<circle cx="90" cy="140" r="16" fill="#FF8F00"></circle>
+<g stroke="#FFD54F" stroke-width="2.5" stroke-linecap="round">
+  <line x1="90" y1="112" x2="90" y2="105"></line>
+  <line x1="90" y1="168" x2="90" y2="175"></line>
+  <line x1="62" y1="140" x2="55" y2="140"></line>
+  <line x1="118" y1="140" x2="125" y2="140"></line>
+  <line x1="71" y1="121" x2="66" y2="116"></line>
+  <line x1="109" y1="159" x2="114" y2="164"></line>
+  <line x1="109" y1="121" x2="114" y2="116"></line>
+  <line x1="71" y1="159" x2="66" y2="164"></line>
+</g>
+<text x="155" y="125" text-anchor="middle" fill="#69F0AE" font-size="14" font-weight="bold">GREEN</text>
+<text x="155" y="145" text-anchor="middle" fill="#FFF176" font-size="18" font-weight="bold">ENERGY</text>
+<text x="155" y="162" text-anchor="middle" fill="#40C4FF" font-size="10">太阳能未来</text>
+<!-- SOLAR STRIP on billboard top -->
+<rect x="52" y="92" width="156" height="8" fill="url(#panelG)" rx="2"></rect>
+<g stroke="#42A5F5" stroke-width="0.9" opacity=".8">
+  <line x1="78" y1="92" x2="78" y2="100"></line>
+  <line x1="104" y1="92" x2="104" y2="100"></line>
+  <line x1="130" y1="92" x2="130" y2="100"></line>
+  <line x1="156" y1="92" x2="156" y2="100"></line>
+  <line x1="182" y1="92" x2="182" y2="100"></line>
+  <line x1="52" y1="96" x2="208" y2="96"></line>
+</g>
+<!-- label -->
+<text x="130" y="82" text-anchor="middle" fill="#1565C0" font-size="11" font-weight="bold">📺 太阳能LED广告牌</text>
+<path d="M130,84 L130,91" stroke="#1565C0" stroke-width="1.5" stroke-dasharray="3,2"></path>
+
+<!-- ═══════════════ TREES ═══════════════ -->
+<!-- tree macro: trunk + canopy layers -->
+<!-- tree 1 -->
+<rect x="265" y="400" width="12" height="50" fill="#795548" rx="4"></rect>
+<circle cx="271" cy="390" r="30" fill="#4CAF50"></circle>
+<circle cx="252" cy="403" r="20" fill="#66BB6A"></circle>
+<circle cx="290" cy="403" r="20" fill="#66BB6A"></circle>
+<circle cx="271" cy="372" r="18" fill="#81C784"></circle>
+<!-- tree 2 -->
+<rect x="585" y="395" width="12" height="55" fill="#795548" rx="4"></rect>
+<circle cx="591" cy="383" r="32" fill="#4CAF50"></circle>
+<circle cx="570" cy="398" r="22" fill="#66BB6A"></circle>
+<circle cx="612" cy="398" r="22" fill="#66BB6A"></circle>
+<circle cx="591" cy="364" r="20" fill="#81C784"></circle>
+<!-- tree 3 – park right -->
+<rect x="1050" y="395" width="12" height="55" fill="#795548" rx="4"></rect>
+<circle cx="1056" cy="380" r="35" fill="#388E3C"></circle>
+<circle cx="1035" cy="398" r="24" fill="#4CAF50"></circle>
+<circle cx="1077" cy="398" r="24" fill="#4CAF50"></circle>
+<circle cx="1056" cy="360" r="22" fill="#66BB6A"></circle>
+
+<!-- ═══════════════ PEOPLE ═══════════════ -->
+<!-- pedestrian 1 (crossing) -->
+<circle cx="462" cy="500" r="9" fill="#FFCC80"></circle>
+<rect x="456" y="509" width="12" height="16" fill="#E91E63" rx="2"></rect>
+<rect x="450" y="511" width="7" height="10" fill="#F48FB1" rx="1"></rect>
+<rect x="463" y="511" width="7" height="10" fill="#F48FB1" rx="1"></rect>
+<rect x="456" y="525" width="5" height="9" fill="#880E4F" rx="1"></rect>
+<rect x="463" y="525" width="5" height="9" fill="#880E4F" rx="1"></rect>
+<!-- pedestrian 2 -->
+<circle cx="490" cy="498" r="9" fill="#FFAB76"></circle>
+<rect x="484" y="507" width="12" height="16" fill="#1976D2" rx="2"></rect>
+<rect x="478" y="509" width="7" height="10" fill="#42A5F5" rx="1"></rect>
+<rect x="491" y="509" width="7" height="10" fill="#42A5F5" rx="1"></rect>
+<rect x="484" y="523" width="5" height="9" fill="#0D47A1" rx="1"></rect>
+<rect x="491" y="523" width="5" height="9" fill="#0D47A1" rx="1"></rect>
+<!-- cyclist -->
+<circle cx="620" cy="498" r="8" fill="#FFCC80"></circle>
+<rect x="616" y="506" width="10" height="14" fill="#FF7043" rx="2"></rect>
+<!-- bike frame -->
+<circle cx="605" cy="522" r="9" fill="none" stroke="#37474F" stroke-width="2.5"></circle>
+<circle cx="635" cy="522" r="9" fill="none" stroke="#37474F" stroke-width="2.5"></circle>
+<line x1="620" y1="520" x2="605" y2="522" stroke="#37474F" stroke-width="2"></line>
+<line x1="620" y1="520" x2="635" y2="522" stroke="#37474F" stroke-width="2"></line>
+<line x1="620" y1="520" x2="618" y2="510" stroke="#37474F" stroke-width="2"></line>
+<line x1="618" y1="510" x2="611" y2="512" stroke="#37474F" stroke-width="2"></line>
+
+<!-- ═══════════════ DECORATIVE ELEMENTS ═══════════════ -->
+<!-- park bench -->
+<rect x="1010" y="445" width="50" height="7" fill="#A1887F" rx="2"></rect>
+<rect x="1014" y="452" width="6" height="10" fill="#8D6E63" rx="1"></rect>
+<rect x="1050" y="452" width="6" height="10" fill="#8D6E63" rx="1"></rect>
+<!-- bench back -->
+<rect x="1010" y="438" width="50" height="5" fill="#BCAAA4" rx="2"></rect>
+<!-- flower bed -->
+<ellipse cx="1080" cy="455" rx="18" ry="8" fill="#A5D6A7"></ellipse>
+<circle cx="1073" cy="452" r="4" fill="#FF80AB"></circle><circle cx="1083" cy="450" r="4" fill="#FFD54F"></circle>
+<circle cx="1078" cy="457" r="4" fill="#F48FB1"></circle>
+<!-- lamp post right -->
+<rect x="1035" y="380" width="8" height="68" fill="#546E7A" rx="3"></rect>
+<circle cx="1039" cy="378" r="8" fill="#FFF176" opacity=".9"></circle>
+
+<!-- ═══════════════ TITLE CARD ═══════════════ -->
+<rect x="700" y="10" width="210" height="48" fill="#FFB300" rx="12" opacity=".95"></rect>
+<text x="805" y="31" text-anchor="middle" fill="white" font-size="13" font-weight="bold">🏙️ 城市场景</text>
+<text x="805" y="50" text-anchor="middle" fill="white" font-size="10.5">找出全部 5 个太阳能装置！</text>
+
+</svg>
+
+  <div class="hotspot" data-id="panel" style="left: 763.96px; top: 26.2377px; width: 118.36px; height: 118.36px;"></div><div class="hotspot" data-id="street" style="left: 263.62px; top: 299.653px; width: 107.6px; height: 107.6px;"></div><div class="hotspot" data-id="bus" style="left: 322.8px; top: 349.725px; width: 107.6px; height: 107.6px;"></div><div class="hotspot" data-id="car" style="left: 737.06px; top: 341.008px; width: 172.16px; height: 172.16px;"></div><div class="hotspot" data-id="sign" style="left: 64.56px; top: 85.6573px; width: 129.12px; height: 129.12px;"></div></div><!-- /scene-container -->
+</div><!-- /scene-wrapper -->
+
+<!-- FOUND CHIPS -->
+<div class="found-panel">
+  <h3>🔍 已发现的太阳能装置：</h3>
+  <div class="found-list" id="found-list"><div class="found-chip" data-id="panel">🏠 屋顶太阳能电池板</div><div class="found-chip" data-id="street">💡 太阳能路灯</div><div class="found-chip" data-id="bus">🚌 太阳能公交候车亭</div><div class="found-chip" data-id="car">🚗 太阳能停车棚 + EV 充电</div><div class="found-chip" data-id="sign">📺 太阳能 LED 广告牌</div></div>
+</div>
+
+<!-- POPUP -->
+<div id="popup-overlay">
+  <div class="popup-card">
+    <span class="popup-emoji" id="popup-emoji">☀️</span>
+    <div class="popup-label">太阳能装置发现！</div>
+    <h2 id="popup-title"></h2>
+    <p id="popup-desc"></p>
+    <div class="popup-fact" id="popup-fact"></div>
+    <button class="popup-close" onclick="closePopup()">明白了！继续找 →</button>
+  </div>
+</div>
+
+<!-- CREDIT BADGE -->
+<div class="credit-badge"><span class="dot"></span> Anysn 制作</div>
+
+<!-- WIN SCREEN -->
+<div id="win-screen">
+  <div class="win-emoji">🎉</div>
+  <h2>🏆 全部找到了！</h2>
+  <p>太棒了！你发现了城市中所有 5 个太阳能装置！<br>太阳能让我们的城市更绿色、更美好！🌱</p>
+  <button class="replay-btn" onclick="restart()">🔄 再玩一次！</button>
+</div>
+
+<script>
+const ITEMS = [
+  { id:"panel",  cx:76.5, cy:14.5, r:5.5, emoji:"🏠",
+    title:"屋顶太阳能电池板",
+    desc:"安装在办公楼屋顶的大型太阳能光伏板阵列，把阳光直接转化为电能，为整栋楼提供清洁电力。",
+    fact:"一栋中型办公楼的屋顶太阳能系统，每年可发电约 10–15 万度，相当于节省数万林吉特电费！" },
+  { id:"street", cx:29.5, cy:60,   r:5,   emoji:"💡",
+    title:"太阳能路灯",
+    desc:"灯杆旁边有一块倾斜的蓝色太阳能板，白天把阳光存入电池，天黑后自动为路灯供电。",
+    fact:"太阳能路灯不需要挖沟铺电线，安装成本比传统路灯低 40%，特别适合新开发区域！" },
+  { id:"bus",    cx:35,   cy:68.5, r:5,   emoji:"🚌",
+    title:"太阳能公交候车亭",
+    desc:"候车亭顶部铺有蓝色太阳能板，为亭内的 LED 显示屏、USB 充电口和夜间照明供电。",
+    fact:"全马已有多个城市试验太阳能公交亭，乘客候车时可免费为手机充电！" },
+  { id:"car",    cx:76.5, cy:72.5, r:8,   emoji:"🚗",
+    title:"太阳能停车棚 + EV 充电",
+    desc:"停车场顶部铺满两排太阳能板，产生的电力直接用于为电动汽车充电站供电，真正的绿色出行！",
+    fact:"一个配备太阳能棚的大型停车场，每天可为超过 50 辆电动车提供充电电力！" },
+  { id:"sign",   cx:12,   cy:25.5, r:6,   emoji:"📺",
+    title:"太阳能 LED 广告牌",
+    desc:"广告牌顶部有一条细长的太阳能板，为广告屏的 LED 灯光供电，全天候发光，零电费！",
+    fact:"一块太阳能广告牌每年可减少约 2 吨二氧化碳排放，相当于种了 100 棵树的效果！" },
+];
+
+let found = new Set();
+let score = 0;
+
+function renderHotspots() {
+  const c = document.getElementById('scene-container');
+  c.querySelectorAll('.hotspot').forEach(h => h.remove());
+  const rect = c.getBoundingClientRect();
+  ITEMS.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'hotspot' + (found.has(item.id) ? ' found' : '');
+    const px = item.cx / 100 * rect.width;
+    const py = item.cy / 100 * rect.height;
+    const pr = item.r  / 100 * rect.width;
+    div.style.cssText = `left:${px-pr}px;top:${py-pr}px;width:${pr*2}px;height:${pr*2}px;`;
+    div.dataset.id = item.id;
+    if (!found.has(item.id)) div.addEventListener('click', () => click(item));
+    c.appendChild(div);
+  });
+}
+
+function click(item) {
+  if (found.has(item.id)) return;
+  found.add(item.id);
+  score += 100;
+  document.querySelector(`.hotspot[data-id="${item.id}"]`)?.classList.add('found');
+  document.querySelector(`.found-chip[data-id="${item.id}"]`)?.classList.add('active');
+  document.getElementById('score-num').textContent = score;
+  document.getElementById('progress-text').textContent = `已找到 ${found.size} / 5`;
+  document.getElementById('popup-emoji').textContent = item.emoji;
+  document.getElementById('popup-title').textContent = item.title;
+  document.getElementById('popup-desc').textContent = item.desc;
+  document.getElementById('popup-fact').innerHTML = `💡 <strong>趣味知识：</strong>${item.fact}`;
+  document.getElementById('popup-overlay').classList.add('show');
+}
+
+function closePopup() {
+  document.getElementById('popup-overlay').classList.remove('show');
+  if (found.size === ITEMS.length) setTimeout(() => document.getElementById('win-screen').classList.add('show'), 350);
+}
+
+function restart() {
+  found = new Set(); score = 0;
+  document.getElementById('score-num').textContent = 0;
+  document.getElementById('progress-text').textContent = '已找到 0 / 5';
+  document.getElementById('win-screen').classList.remove('show');
+  document.querySelectorAll('.found-chip').forEach(c => c.classList.remove('active'));
+  renderHotspots();
+}
+
+// init chips
+document.getElementById('found-list').innerHTML = ITEMS.map(it =>
+  `<div class="found-chip" data-id="${it.id}">${it.emoji} ${it.label || it.title}</div>`
+).join('');
+
+// init hotspots after paint
+requestAnimationFrame(() => setTimeout(renderHotspots, 120));
+window.addEventListener('resize', renderHotspots);
+</script>
+
+
+</body></html>
